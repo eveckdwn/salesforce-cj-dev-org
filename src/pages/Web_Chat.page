@@ -1,0 +1,70 @@
+<apex:page >
+    <h1>Let’s start chatting...</h1>
+    <br />
+    Click the button to start a chat.
+    <br />
+  
+    <!--Embedded Service Snippet-->
+    <style type='text/css'>
+        .embeddedServiceHelpButton .helpButton .uiButton {
+            background-color: #565656;
+            font-family: "Arial", sans-serif;
+        }
+        .embeddedServiceHelpButton .helpButton .uiButton:focus {
+            outline: 1px solid #565656;
+        }
+    </style>
+    
+    <script type='text/javascript' src='https://service.force.com/embeddedservice/5.0/esw.min.js'></script>
+    <script type='text/javascript'>
+        var initESW = function(gslbBaseURL) {
+            embedded_svc.settings.displayHelpButton = true; //또는 false
+            embedded_svc.settings.language = ''; //예를 들어 'en' 또는 'en-US’ 입력
+    
+            //embedded_svc.settings.defaultMinimizedText = '...'; //(기본값 - 전문가와 채팅)
+            //embedded_svc.settings.disabledMinimizedText = '...'; //(기본값 - 에이전트 오프라인)
+    
+            //embedded_svc.settings.loadingText = ''; //(기본값 - 로드 중)
+            //embedded_svc.settings.storageDomain = 'yourdomain.com'; //(방문객이 차트 세션 동안 하위 도메인을 탐색할 수 있도록 배포에 대한 도메인 설정)
+    
+            // 채팅에 대한 설정
+            //embedded_svc.settings.directToButtonRouting = function(prechatFormData) {
+                // Dynamically changes the button ID based on what the visitor enters in the pre-chat form.
+                // Returns a valid button ID.
+            //};
+            //embedded_svc.settings.prepopulatedPrechatFields = {}; //사전 채팅의 필드에서 자동 채우기 설정
+            //embedded_svc.settings.fallbackRouting = []; //버튼 ID, 사용자 ID 또는 userId_buttonId 배열
+            //embedded_svc.settings.offlineSupportMinimizedText = '...'; //(기본값: 연락처)
+    
+            embedded_svc.settings.enabledFeatures = ['LiveAgent'];
+            embedded_svc.settings.entryFeature = 'LiveAgent';
+    
+            embedded_svc.init(
+                'https://cjsohn-dev-ed.my.salesforce.com',
+                'https://cjsohn-developer-edition.ap4.force.com/',
+                gslbBaseURL,
+                '00D6F000001oJwa',
+                'Chat_Agents',
+                {
+                    baseLiveAgentContentURL: 'https://c.la1-c2-ukb.salesforceliveagent.com/content',
+                    deploymentId: '5726F000000Lq9A',
+                    buttonId: '5736F0000004f7A',
+                    baseLiveAgentURL: 'https://d.la1-c2-ukb.salesforceliveagent.com/chat',
+                    eswLiveAgentDevName: 'Chat_Agents',
+                    isOfflineSupportEnabled: true
+                }
+            );
+        };
+    
+        if (!window.embedded_svc) {
+            var s = document.createElement('script');
+            s.setAttribute('src', 'https://cjsohn-dev-ed.my.salesforce.com/embeddedservice/5.0/esw.min.js');
+            s.onload = function() {
+                initESW(null);
+            };
+            document.body.appendChild(s);
+        } else {
+            initESW('https://service.force.com');
+        }
+    </script>
+</apex:page>

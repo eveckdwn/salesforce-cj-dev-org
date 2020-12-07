@@ -1,0 +1,7 @@
+<aura:component implements="force:appHostable">
+    
+    <c:helloHeading/>
+    
+    <p>I am proficient in JavaScript.</p>
+    
+</aura:component>

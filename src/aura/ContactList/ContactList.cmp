@@ -1,0 +1,40 @@
+<aura:component controller="ContactsListController"
+                implements="force:hasRecordId,force:hassObjectName,flexipage:availableForAllPageTypes">
+    <aura:attribute name="contactList" type="Contact[]"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <!-- Child Component에서 전달 받은 이벤트를 핸들링 -->
+<aura:handler name="quickCotact" event="c:QuickContactEvent" action="{!c.handleCompEvent}" />
+
+    <!-- implements에서 force:hasRecordId를 설정하면, 
+        별도의 attribute를 정의하지 않아도 v.recordId를 사용할 수 있음.-->
+    {!v.recordId}
+    <br/>
+    <br/>
+    <!-- implements에서 force:hassObjectName 설정하면, 
+        별도의 attribute를 정의하지 않아도 v.sObjectName를 사용할 수 있음.-->
+    {!v.sObjectName}
+    <br/>
+    <br/>
+    
+    <div>
+        <c:QuickContact accountId="{!v.recordId}"/>
+    </div>
+    <div class="slds-p-around_small">
+        <div class="slds-grid slds-wrap">
+        <aura:iteration items="{!v.contactList}" var="con">
+            <div class="slds-col slds-size_1-of-3">
+                <!--iconName은 slds의 icon을 참조하여 삽입할 수 있다.-->
+                <lightning:card title="{!con.LastName}" footer="{!con.Email}" iconName="action:add_contact">
+                    <aura:set attribute="actions">
+                        <lightning:button name="{!con.Id}" label="View Details" variant="brand" onclick="{!c.doRedirect}"/>
+                    </aura:set>
+                    <p class="slds-p-horizontal_small">
+                            {!con.FirstName}&nbsp;{!con.LastName}<br/>
+                            {!con.Phone}
+                    </p>
+                </lightning:card>
+            </div>
+        </aura:iteration>
+        </div>
+    </div>
+</aura:component>

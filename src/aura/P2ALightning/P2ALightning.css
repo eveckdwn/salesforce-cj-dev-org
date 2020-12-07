@@ -1,0 +1,68 @@
+/* 
+ @author         Comity Designs, Inc.
+ @version        1.0
+ @date           Aug 30 2017
+ @description    Component Styling in the managed package
+ */
+.THIS {
+}
+
+.THIS .sel-checkbox{
+	position: absolute !important;
+    z-index: 1000 !important;
+    /* margin-top: 10px; */
+    /* margin-left: 5px; */
+    opacity: 0 !important;
+    width: 2rem !important;
+    height: 2rem !important;
+}
+
+.THIS .modalButton{
+	width:100%;
+	max-width:550px;	
+}
+
+.THIS .ltn-modal-container{
+	    		
+	margin-top:50px; width:97% !important; min-width:97% !important; max-width:97% !important;
+	    		
+}
+	    		
+.THIS .ltn-heading-medium{
+
+	margin-left:0%;
+
+}
+
+.THIS .ltn-modal-content{
+
+	height:73%; padding-left:5px !important; padding-right:5px !important;
+
+}
+
+.THIS .closeButton{
+    background-color:transparent;
+    margin-left: -8px;
+}
+
+.THIS .hide-alert{
+	display:none;
+}
+
+.THIS .slds-icon-text-default {
+    fill: white !important;
+}
+
+.THIS .slds-input{
+	width: 170px;
+}
+
+/* The following 2 CSS rules are to fix the dialog close "X" button on the */
+/* top right in Lightning Experience in the Winter '18 Release */
+.THIS .slds-modal_prompt .slds-modal__close{
+    display: block !important;
+}
+
+.THIS .slds-modal--prompt .slds-modal__close{
+    display: block !important;
+}

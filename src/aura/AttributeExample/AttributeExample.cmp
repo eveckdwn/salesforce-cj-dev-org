@@ -1,0 +1,66 @@
+<aura:component>
+    <aura:attribute name="whom" type="String" default="SFDCPanther" access="public" />
+    <!--
+        public String whom = 'SFDCPanther';
+    -->
+    <aura:attribute name="age" type="integer" default="24" access="private" />
+    <!--
+        private int age = 24;
+    -->
+    <aura:attribute name="contactObj" type="Contact" access="public" />
+    <!--
+        public Contact contactObj;
+    -->
+
+    <aura:attribute name="colorPaletteArray" type="String[]" default="['red', 'green', 'blue']"/>
+    <aura:attribute name="colorPaletteList" type="List" default="['red', 'green', 'blue']"/>
+    <aura:attribute name="colorPaletteSet" type="Set" default="['red', 'green', 'blue']"/>
+    <aura:attribute name="keyValueMap" type="Map" default="{key1:'value1', key2:'value2', key3:'value3'}"/>
+
+
+    <lightning:input aura:id="testInput" label="Enter Age"/>
+    Welcome {!v.Whom}, Age: {!v.age}, Color: {!v.colorPaletteArray[0]}, {!v.colorPaletteList[1]}, {v.colorPaletteSet[2]}<br/>
+    keyValueMap: {!v.keyValueMap}, keyValueMap.get(key1): {!v.keyValueMap.key1}<br/><br/>
+
+    <lightning:button name="Component Methods" label="Component Methods" value="Component Methods" onclick="{!c.doClick}"/>
+
+    <br/>
+    <br/>
+
+    <!-- If-Else -->
+    <!--
+        if(Boolean){
+
+        }else{
+
+        }
+    -->
+    <aura:attribute name="truthy" default="false" type="Boolean"/>
+    <aura:if isTrue="{!v.truthy}">
+        true
+        <aura:set attribute="else">
+            false
+        </aura:set>
+    </aura:if>
+
+    <br/>
+    <br/>
+
+    <!-- Iteration -->
+    <!--
+        for(String str: ListOfString){
+
+        }
+    -->
+    <aura:attribute name="colorList" type="List" default="['red','yellow','green','orange']"/>
+    <aura:iteration items="{!v.colorList}" var="item">
+        {!item}<br/>
+    </aura:iteration>
+
+    <!-- Map -->
+    <aura:attribute name="mapVar" type="Map" />
+    <lightning:button label="CreateMap" onclick="{!c.doCreateMap}"/><br/>
+    <aura:iteration items="{!v.mapVar}" var="map">
+        Key: {!map.key} and Value: {!map.value}<br/>
+    </aura:iteration>
+</aura:component>

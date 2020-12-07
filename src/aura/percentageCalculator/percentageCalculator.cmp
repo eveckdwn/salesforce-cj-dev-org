@@ -1,0 +1,16 @@
+<aura:component>
+    <aura:attribute name="wholeNumber" type="integer" access="public"/>
+    <aura:attribute name="percentage" type="integer" access="public"/>
+    <!--
+        public String name;
+    -->
+    <div class="slds-p-around_small">
+        <!-- attribute WholeNumber를 변수로 가져감.-->
+        <lightning:input type="number" name="wholeNumber" label="Enter a number"
+                        value="{!v.wholeNumber}" />
+        <lightning:input type="number" name="percentage" label="Enter a percentage"
+        value="{!v.percentage}" formatter="percent-fixed"/>
+        
+        {!v.percentage} percentage of {!v.wholeNumber} is {!div(mult(v.wholeNumber, v.percentage),100)}
+    </div>
+</aura:component>

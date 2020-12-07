@@ -1,0 +1,30 @@
+<apex:page renderAs="pdf" applyHtmlTag="false" showHeader="false">
+    
+    <head>
+        <style> 
+            
+            
+            ol {
+            list-style: none;
+            counter-increment: start 0;
+            }
+            li:before {
+            content: counter(start, decimal) ") ";
+            counter-increment: start;
+            }
+        </style>
+    </head>  
+    <div>
+        <ol>
+            <li> List Item 1</li>
+            <li>List Item 2</li>
+        </ol>
+    </div>
+    <apex:image url="/img/samples/stars_500.gif"></apex:image>
+    
+    <div>
+        <ol>
+            <li>List Item 3</li>
+        </ol>
+    </div>
+</apex:page>

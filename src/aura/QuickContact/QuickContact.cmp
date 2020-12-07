@@ -1,0 +1,31 @@
+<aura:component controller="ContactsListController">
+    <!--
+         상위 컴포넌트 ContactList.cmp에서 force:hasRecordId를 상속하고 있으므로
+         accountId를 선언할 수 있음.
+
+         <c:QuickContact accountId="{!v.recordId}"/>
+    -->
+    <aura:attribute name="accountId" type="String"/>
+    <aura:attribute name="ErrorMessage" type="String"/>
+    <!-- Contact을 Insert할 때 성공시, 이벤트를 등록 -->
+    <aura:registerEvent name="quickContact" type="c:QuickContactEvent" />
+    <aura:attribute name="CreateContact" type="Contact" default="{
+                                                                    sobjectName: 'Contact',
+                                                                    FirstName: '',
+                                                                    LastName: '',
+                                                                    Email: '',
+                                                                    Phone: ''
+                                                                }" />
+
+    {!v.ErrorMessage}
+    <div class="slds-p-around_x-small">
+        <lightning:input type="text" aura:id="contactForm"
+                        messageWhenValueMissing="Please enter First Name" value="{!v.CreateContact.FirstName}" label="First Name" required="true" />
+        <lightning:input type="text" aura:id="contactForm"
+                        messageWhenValueMissing="LastName is required to create the contact" value="{!v.CreateContact.LastName}" label="Last Name" />
+        <lightning:input type="email" value="{!v.CreateContact.Email}" label="Email" required="true" />
+        <lightning:input type="phone" value="{!v.CreateContact.Phone}" label="Phone" required="true" />
+        <lightning:button label="Create Contact" variant="brand" onclick="{!c.doSave}"/>
+    </div>
+
+</aura:component>

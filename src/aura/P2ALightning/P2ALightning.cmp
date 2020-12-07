@@ -1,0 +1,275 @@
+<!-- 
+ @author         Comity Designs, Inc.
+ @version        1.0
+ @date           Aug 30 2017
+ @description    Component in the managed package
+  -->
+<aura:component controller="ProductsToAssetsCtrl" implements="force:hasRecordId,flexipage:availableForRecordHome" access="global">
+  <!-- To add it to quick action ,force:lightningQuickAction -->
+  <style>
+    .modalButton
+    {	    		
+    width:100%;
+    max-width:550px;
+    display: block; 
+    margin: 0 auto;
+    }
+  </style>
+  <!-- ATTRIBUTES USED IN THE PAGE -->
+  <aura:attribute name="recordId" type="Id" />
+  <aura:attribute name="opportunity" type="Opportunity" />
+  <aura:attribute name="multipleQuantity" type="AssetWrapper[]" />
+  <aura:attribute name="singleQuantity" type="AssetWrapper[]" />
+  <aura:attribute name="picklistOptions" type="String[]"/>
+  <aura:attribute name="assetList" type="AssetWrapper[]" />
+  <aura:attribute name="convertedAssets" type="Asset[]" />
+  <aura:attribute name="account" type="Account" />
+  <aura:attribute name="sumOfQuantities" type="Integer" />
+  <aura:attribute name="isMultipleView" type="boolean" default="true" />
+  <aura:attribute name="productsOnOpportunity" type="boolean" />
+  <aura:attribute name="numberOfConvertedAssets" type="Integer" />
+  <aura:attribute name="fieldLabels" type="Object[]" />
+  <!-- Aura method used to reload data when necessary -->
+  <aura:method name="initMethod" action="{!c.doInit}" />
+  <aura:method name="openToolbar" action="{!c.openToolbar}"/>
+  <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+  <!-- The button that opens our modal window -->
+  <lightning:button variant="brand" label="Convert Products to Assets" value="Im abutton" onclick="{! c.showOppmodal }" class="modalButton"/>
+  <!-- Beginning of modal window -->
+  <div class="slds">
+    <div aria-hidden="true" role="dialog" class="slds-modal slds-modal--prompt slds-fade-in-hide" aura:id="modaldialog" >
+      <div class="slds-modal__container ltn-modal-container">
+        <div class="slds-modal__header" style="border-bottom: 2px solid rgb(216, 221, 230);">
+          <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick="{! c.hideModal }">
+            <lightning:icon iconName="action:close" size="small" alternativeText="Close" class="closeButton"/>
+          </button>
+          <!--<lightning:button class="slds-float_left" variant="neutral" label="Close" value="Im a button" onclick="{! c.hideModal }" />	-->					         
+          <h2 class="slds-text-heading--medium ltn-heading-medium" >Convert Products to Assets</h2>
+        </div>
+        <div class="slds-modal__content ltn-modal-content" style="background-color: rgb(244, 246, 249); overflow:scroll;">
+          <!-- ALERT FOR USER WHO DIDNT SELECT ASSETS TO CONVERT -->
+          <div class="slds-notify slds-notify--alert slds-theme--error slds-theme--alert-texture hide-alert" aura:id="alert-convert" role="alert">
+            <h2>
+              Please select products before clicking Convert
+            </h2>
+          </div>
+          <!-- INFO ALERT FOR WHEN THERE ARE NO PRODUCTS TO CONVERT -->
+          <aura:if isTrue="{!v.sumOfQuantities==0}">
+            <div class="slds-notify slds-notify--alert slds-theme--alert-texture" role="alert" style="position:relative;">
+              <h2>No products to convert.</h2>
+            </div>
+          </aura:if>
+          <!-- TABLES START HERE -->
+          <div style="">
+            <div class="slds-text-title_caps" style="margin:20px">Products - Unconverted ({!v.sumOfQuantities})</div>
+            <div aura:id="selected-toolbar" class="hide-alert" style="width:100%; border-left:none; border-right:none;padding:15px; background-color:rgba(255,255,255,0.7); border-top:1px solid #eee; ">
+              <section class="slds-clearfix">
+                <div class="slds-float--left" style="padding-left:5px;">
+                  <div class="slds-text-title" style="width: 175px;margin-top: 4px;">Set Status for Selected Items: </div>
+                </div>
+                <div class="slds-float--left" >
+                  <select class="slds-select" style="height:23px;" onchange="{!c.statusAll}">
+                    <option value="">- None -</option>
+                    <aura:iteration items="{!v.picklistOptions}" var="pck">
+                      <option value="{!pck}">{!pck}</option>
+                    </aura:iteration>
+                  </select>
+                </div>
+              </section>
+            </div>
+            <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+              <thead>
+                <tr class="slds-text-title_caps">
+                  <th scope="col">
+                    <div class="slds-truncate" title="cb" style="margin-left:9px;">
+                      <input class="slds-checkbox" id="selectAllCheckbox" type="checkbox"  onchange="{!c.selectDeselectAll}" />
+                    </div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Product Name">{!v.fieldLabels[0].ProductName}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Price">{!v.fieldLabels[0].price}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Quantity">{!v.fieldLabels[0].quantity}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Asset Name">{!v.fieldLabels[0].name}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Status" style="float:left;margin-right:2px;">{!v.fieldLabels[0].status}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Purchase Date">{!v.fieldLabels[0].purchasedate}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Install Date">{!v.fieldLabels[0].installdate}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Usage End Date">{!v.fieldLabels[0].usageenddate}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Serial Number">{!v.fieldLabels[0].serialnumber}</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <aura:iteration items="{!v.assetList}" var="mpq">
+                  <tr>
+                    <th scope="row" data-label="Opportunity Name">
+                      <div class="slds-checkbox_add-button" style="float:left;">
+                        <ui:inputCheckbox value="{!mpq.isAssetSelected}" updateOn="change,click" class="sel-checkbox" click="{!c.openToolbar}"/>
+                        <label for="add-checkbox-6" class="slds-checkbox_faux">
+                        <span class="slds-assistive-text">Add product</span>    
+                        </label>
+                      </div>
+                    </th>
+                    <td data-label="Product Name">
+                      <div class="slds-truncate" title="Cloudhub"><a href="{! '/one/one.app#/sObject/'+mpq.oliID+'/view'}">{!mpq.asset.Name}</a></div>
+                    </td>
+                    <td data-label="Price">
+                      <div class="slds-truncate" title="Price">
+                        <ui:outputCurrency aura:id="curr" value="{!mpq.asset.Price}"/>
+                      </div>
+                    </td>
+                    <td data-label="Quantity">
+                      <div class="slds-truncate" title="">{!mpq.asset.Quantity}</div>
+                    </td>
+                    <td data-label="Asset Name">
+                      <div class="slds-truncate" title="Asset Name">
+                        <input type="text" value="{!mpq.asset.Name}" data-field="Name" data-leid="{!mpq.leid}" onchange="{!c.updateMObject}" class="slds-input" placeholder="Placeholder Text" style="width:170px;"/>
+                      </div>
+                    </td>
+                    <td data-label="Status">
+                      <div class="slds-truncate" title="Status">
+                        <div class="slds-select_container">
+                          <select class="slds-select" id="select-01" style="width:120px;" data-field="Status" data-leid="{!mpq.leid}" onchange="{!c.updateMObject}">
+                            <option value="">- None -</option>
+                            <aura:iteration items="{!v.picklistOptions}" var="pck">
+                              <aura:if isTrue="{!pck==mpq.asset.Status}">
+                                <option value="{!pck}" selected="selected">{!pck}</option>
+                                <aura:set attribute="else">
+                                  <option value="{!pck}">{!pck}</option>
+                                </aura:set>
+                              </aura:if>
+                            </aura:iteration>
+                          </select>
+                        </div>
+                      </div>
+                    </td>
+                    <td data-label="Purchase Date">
+                      <div class="slds-truncate" title="Purhcase Date">
+                        <input type="date" min="mm-dd-yyyy" max="mm-dd-yyyy" aura:id="dateField" value="{!mpq.asset.PurchaseDate}" data-field="PurchaseDate" data-leid="{!mpq.leid}" onchange="{!c.updateMObject}" class="slds-input"/>
+                      </div>
+                    </td>
+                    <td data-label="Install date">
+                      <div class="slds-truncate" title="Install Date">
+                        <input type="date" min="mm-dd-yyyy" max="mm-dd-yyyy" aura:id="dateField" value="{!mpq.asset.InstallDate}" data-field="InstallDate" data-leid="{!mpq.leid}" onchange="{!c.updateMObject}" class="slds-input"/>
+                      </div>
+                    </td>
+                    <td data-label="Usage End Date">
+                      <div class="slds-truncate" title="Usage End Date">
+                        <input type="date" min="mm-dd-yyyy" max="mm-dd-yyyy" aura:id="dateField" value="{!mpq.asset.UsageEndDate}" data-field="UsageEndDate" data-leid="{!mpq.leid}" onchange="{!c.updateMObject}" class="slds-input"/>
+                      </div>
+                    </td>
+                    <td data-label="Serial Number">
+                      <div class="slds-truncate" title="Serial Number">
+                        <input type="text" value="{!mpq.asset.SerialNumber}" data-field="SerialNumber" data-leid="{!mpq.leid}" onchange="{!c.updateMObject}" class="slds-input" style="width:118px;" placeholder="Enter SN"/>
+                      </div>
+                    </td>
+                  </tr>
+                </aura:iteration>
+              </tbody>
+            </table>
+          </div>
+          <div style=" margin-top:20px;">
+            <div class="slds-text-title_caps" style="margin:20px">Assets - Converted on <a href="{! '/one/one.app#/sObject/'+v.account.Id+'/view'}">{!v.account.Name}</a> ({!v.numberOfConvertedAssets})</div>
+            <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+              <thead>
+                <tr class="slds-text-title_caps">
+                  <th scope="col">
+                    <div class="slds-truncate" title="Asset Name">{!v.fieldLabels[0].name}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Price">{!v.fieldLabels[0].price}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Quantity">{!v.fieldLabels[0].quantity}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Product Name">{!v.fieldLabels[0].ProductName}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Status">{!v.fieldLabels[0].status}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Purchase Date">{!v.fieldLabels[0].purchasedate}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Install Date">{!v.fieldLabels[0].installdate}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Usage End Date">{!v.fieldLabels[0].usageenddate}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Serial Number">{!v.fieldLabels[0].serialnumber}</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Purchase Opportunity">{!v.fieldLabels[0].comityp2a__purchase_opportunity__c}{!v.fieldLabels[0].purchase_opportunity__c}</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <aura:iteration items="{!v.convertedAssets}" var="cas">
+                  <tr>
+                    <th scope="row" data-label="Asset Name">
+                      <div class="slds-truncate" title="Cloudhub"><a href="{! '/one/one.app#/sObject/'+cas.Id+'/view'}">{!cas.Name}</a></div>
+                    </th>
+                    <td data-label="Price">
+                      <div class="slds-truncate" title="">
+                        <ui:outputCurrency aura:id="curr" value="{!cas.Price}"/>
+                      </div>
+                    </td>
+                    <td data-label="Quantity">
+                      <div class="slds-truncate" title="">{!cas.Quantity}</div>
+                    </td>
+                    <td data-label="Product Name">
+                      <div class="slds-truncate" title="">{!cas.Product2.Name}</div>
+                    </td>
+                    <td data-label="Status">
+                      <div class="slds-truncate" title="">{!cas.Status}</div>
+                    </td>
+                    <td data-label="Purchase Date">
+                      <div class="slds-truncate" title="">{!cas.PurchaseDate}</div>
+                    </td>
+                    <td data-label="Install Date">
+                      <div class="slds-truncate" title="">{!cas.InstallDate}</div>
+                    </td>
+                    <td data-label="Usage End Date">
+                      <div class="slds-truncate" title="">{!cas.UsageEndDate}</div>
+                    </td>
+                    <td data-label="Serial Number">
+                      <div class="slds-truncate" title="">{!cas.SerialNumber}</div>
+                    </td>
+                    <td data-label="Purchase Opportunity">
+                      <div class="slds-truncate" title="">{!cas.Purchase_Opportunity__r.Name}{!cas.ComityP2A__Purchase_Opportunity__r.Name}</div>
+                    </td>
+                  </tr>
+                </aura:iteration>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- TABLES END HERE -->
+        <footer class="slds-modal__footer">
+          <div style="float:right">
+            <lightning:button variant="neutral" aura:id="switchViews" label="{!if(v.isMultipleView==true,'View in Single Quantity','View in Multipe Quantity')}" disabled="{!if(or(v.account.Id==null,v.sumOfQuantities==0,v.opportunity.StageName!='Closed Won'),true, false)}" onclick="{! c.switchViews }" />
+            <lightning:button variant="brand" label="Convert" disabled="{!if(or(v.account.Id==null,v.sumOfQuantities==0, v.opportunity.StageName!='Closed Won'),true, false)}" onclick="{! c.convertSelected }" />
+          </div>
+        </footer>
+      </div>
+    </div>
+  </div>
+  <div class="slds-backdrop slds-backdrop--hide" aura:id="backdrop"></div>
+</aura:component>

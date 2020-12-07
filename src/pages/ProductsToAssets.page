@@ -1,0 +1,341 @@
+<!-- 
+ @author         Comity Designs, Inc.
+ @version        3.2
+ @date           Aug 30 2017
+ @description    Component in the managed package
+  -->
+<apex:page controller="ProductsToAssetsCtrl" cache="false" id="thePage" tabStyle="Asset" sidebar="false" showHeader="{!IF($CurrentPage.parameters.exp == 'LE', false, true)}">
+  <!-- Loading SLDS as a resrource -->
+  <apex:slds />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  
+  <!-- CUSTOM CSS -->
+  <style>
+    /* styling for error message that appears when AccountId is not present in the opportunity */
+    .Messages { color: red; font-weight: strong;}
+    /* Styling for headers of SLDS cards */
+    .slds-card__header-link:hover,
+    .slds-text-heading_small:hover{
+    text-decoration: none !important;
+    color: black !important;
+    cursor:default !important;	
+    }
+    /* SLDS ERROR STYLING */
+	.msgIcon {
+	    display: none!important
+	}
+	.customMessage * {
+	    color: #fff!important
+	}
+	.customMessage {
+	    margin: 5px 0!important;
+	    max-width: 1280px;
+	    opacity: 1!important;
+	    width: 100%;
+	    font-size: 12px;
+	    border: 0px;
+	    padding-left: 10px;
+	}
+	.message {
+	    opacity: .1
+	}
+    /* Styling for the footer that appears ONLY in Lightning Experience on the bottom of the modal */
+    #fixed-footer { 
+    height: 40px; 
+    position: fixed; 
+    bottom:4%;
+    width:100%; 
+    margin-left: -10px;
+    margin-right: 0;
+    padding-bottom:10px;
+    z-index: 999;
+    }
+    /* the next two are for div resizing when we are in LE. This will make the content in the modal 
+    scrollable, but not the fixed footer */
+    .slds-scope{
+    height:100% !important;
+    }
+    html{
+    height:100% !important;
+    }
+    /* Width of the picklist in the header of Products table */       
+    .StatusPicklist{
+    width:60px;
+    }
+    /* Width of the picklist in the table rows 
+    (changed it so that the header width increases and we can fit the elements inside it) */
+    .PicklistRow{
+    width:115px;
+    }
+    /* The footer that has the convert button in Lightning Experience on the bottom of the iframe */
+    .slds-modal__footer{
+    padding-left:0;
+    padding-right:29px;
+    width:102%;
+    z-index:1000;
+    background-color: rgb(244, 246, 249);
+    border-top: 2px solid rgb(216, 221, 230);
+    }
+    /* The background of the toast message (gray) */
+    #toast-background-overlay{
+    display:none;
+    background-color:rgba(0,0,0,0.2); 
+    z-index: 1000; 
+    height:100%; 
+    width:100%; 
+    position: absolute; 
+    top:0%; 
+    left:0%
+    }
+    /* The position of the toast message itself on the screen */
+    #converted-toast{
+    height: 4rem; 
+    position: fixed; 
+    left: 33%; 
+    bottom: 40%;
+    }
+  </style>
+  <!-- Javascript -->
+  <apex:outputPanel id="jsPanel" >
+    <script>
+      $(document).ready(function(){
+        overridePageMessages();    
+      });
+    
+      var lightningViewUrl = "/one/one.app?source=aloha#/sObject/";
+      
+      function confirmCancel() {
+        var isCancel = confirm("Are you sure you wish to cancel?");
+        if (isCancel) return true;
+        return false;
+      }
+      
+      function onConvertComplete() {
+        if ({!Lightning}) {
+          parent.location.href = lightningViewUrl + "{!URLENCODE(opportunity.Id)}/view";
+        } else {
+          window.location.href = "/{!URLENCODE(opportunity.Id)}";
+        }
+      }
+      
+      function closeToast() {
+        document.getElementById("toast-background-overlay").style.display = 'none';
+      }
+      
+      function openToast() {
+        if ({!hasErrors == false}) {
+          document.getElementById("toast-background-overlay").style.display = 'block';
+          setTimeout(onConvertComplete, 3000);
+        }
+      }
+      
+      function overridePageMessages(){    
+        var textureEffect = '';
+          
+  		$('.errorM3').addClass('slds-notify slds-notify--alert slds-theme--error customMessage '+textureEffect);                  
+         
+        $('.errorM3').removeClass('errorM3'); 
+     }
+                   
+    </script>
+  </apex:outputPanel>
+  <!-- Page starts here-->
+  <apex:form id="theForm">
+    <div id="page-container" style="position:relative;">
+      <div class="slds" style="height:92%;" >
+        <div class="slds-grid slds-wrap" style="margin:20px; margin-top:10px !important;">
+          <div class="slds-p-horizontal_small slds-size_1-of-3 slds-medium-size_3-of-7 slds-large-size_5-of-12" style="margin-top:7px;">
+            <div class="slds-text-title_caps" style="">Products - Unconverted ({!sumOfQuantities})</div>
+          </div>
+          <div class="slds-p-horizontal_small slds-size_2-of-3 slds-medium-size_4-of-7 slds-large-size_7-of-12">
+            <apex:commandButton action="{!convert}" style="{!IF(Lightning==false, '', 'display:none')}" value="Convert" styleClass="slds-button slds-button_brand " status="spinnerStatus" oncomplete="openToast()" disabled="{!IF(account.Id==null,true,false)}" reRender="err-messages,jsPanel" />
+            <apex:commandButton action="{!cancel}" style="{!IF(Lightning==false, '', 'display:none')}" value="Cancel" onclick="return confirmCancel()" rendered="{!Lightning==false}" immediate="true" styleClass="slds-button slds-button_neutral"/>
+            <apex:commandButton id="headerButton" style="{!IF(sumOfQuantities>0, '', 'display:none')}" action="{!toggleView}"  value="{!toggleButtonHeader}" rendered="{!renderMultipleAssetButton}" status="spinnerStatus" immediate="true" reRender="editableView,headerButton"  disabled="{!IF(OR(account.Id==null,sumOfQuantities>1000),true,false)}" styleClass="slds-button slds-button_neutral"/>
+          </div>
+        </div>
+        <div id="error-message-div" style="margin-bottom:20px; text-align:center;">
+        		<apex:pageMessages id="err-messages"></apex:pageMessages>
+        </div>
+        <!--     UNCONVERTED ASSETS TABLE STARTS HERE      --> 
+        <apex:dataTable id="editableView" value="{!assetW}" var="val" styleClass="slds-table slds-table--bordered slds-table--striped editableView-table">
+          <apex:column >
+            <apex:facet name="header">
+              <apex:outputPanel >
+                <apex:inputCheckbox value="{!selectAllCheckbox}" style="float:left;margin-right:3px;margin-top:2px;">
+                  <apex:actionSupport event="onchange" action="{!selectDeselectAll}" reRender="editableView"></apex:actionSupport>
+                </apex:inputCheckbox>
+                <div class="slds-text-title_caps">All</div>
+              </apex:outputPanel>
+            </apex:facet>
+            <apex:inputCheckbox value="{!val.isAssetSelected}" rendered="{!IF(val.asset.Quantity > 0, true, false)}"/>
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Product2.Fields.Name.Label}</div>
+            </apex:facet>
+            <apex:outputLink value="/{!URLENCODE(val.oliID)}" rendered="{!Lightning==false}">{!val.asset.Name}</apex:outputLink>
+            <apex:outputPanel rendered="{!Lightning}">
+              <apex:outputLink value="/one/one.app#/sObject/{!URLENCODE(val.OliID)}/view" target="_top">{!val.asset.Name}</apex:outputLink>
+            </apex:outputPanel>
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.Price.Label}</div>
+            </apex:facet>
+            <span class="{!IF(val.asset.Quantity > 0,'','field-disabled')}">
+              <apex:outputField value="{!val.asset.Price}" />
+            </span>
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.Quantity.Label}</div>
+            </apex:facet>
+            <apex:outputText value="{0, number, ###,###}" styleClass="{!IF(val.asset.Quantity > 0,'','field-disabled')}">
+              <apex:param value="{!val.asset.Quantity}"/>
+            </apex:outputText>
+          </apex:column>
+          <apex:column headerValue="Asset Name">
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.Name.Label}</div>
+            </apex:facet>
+            <apex:inputField value="{!val.asset.Name}" styleClass="{!IF(val.asset.Quantity > 0,'','field-disabled')}"/>
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <apex:outputLabel >
+                <div class="slds-text-title_caps" style="float:left;margin-top:2px; margin-right:5px;">{!$ObjectType.Asset.Fields.Status.Label}</div>
+                <apex:inputField onchange="statusAllOnChange()" value="{!assetStatus.Status}" styleClass="StatusPicklist" />
+              </apex:outputLabel>
+            </apex:facet>
+            <apex:inputField value="{!val.asset.Status}" styleClass="PicklistRow"/>
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.PurchaseDate.Label}</div>
+            </apex:facet>
+            <apex:inputField value="{!val.asset.PurchaseDate}" styleClass="{!IF(val.asset.Quantity > 0,'','field-disabled')}"/>
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.InstallDate.Label}</div>
+            </apex:facet>
+            <apex:inputField value="{!val.asset.InstallDate}" styleClass="{!IF(val.asset.Quantity > 0,'','field-disabled')}"/>
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.UsageEndDate.Label}</div>
+            </apex:facet>
+            <apex:inputField value="{!val.asset.UsageEndDate}" styleClass="{!IF(val.asset.Quantity > 0,'','field-disabled')}"/>
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.SerialNumber.Label}</div>
+            </apex:facet>
+            <apex:inputField value="{!val.asset.SerialNumber}" styleClass="{!IF(val.asset.Quantity > 0,'','field-disabled')}"/>
+          </apex:column>
+        </apex:dataTable>
+        <!-- UNCONVERTED ASSETS TABLE ENDS HERE -->
+        <apex:actionFunction name="statusAllOnChange" action="{!selectAllStatus}" reRender="editableView"/>
+        <!-- CONVERTED ASSETS TABLE STARTS HERE -->
+        <div class="slds-text-title_caps" style="margin:20px">Assets - Converted on <a href="{!IF(Lightning==true, '/one/one.app?source=aloha#/sObject/'+URLENCODE(account.Id)+'/view','/'+URLENCODE(account.Id))}">{!account.Name}</a> ({!convertedAssetsCount})</div>
+        <apex:dataTable value="{!convertedAssets}" var="val2" styleClass="slds-table slds-table--bordered slds-table--striped">
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.Name.Label}</div>
+            </apex:facet>
+            <apex:outputLink value="/{!URLENCODE(val2.Id)}" rendered="{!Lightning==false}">{!val2.Name}</apex:outputLink>
+            <apex:outputPanel rendered="{!Lightning}">
+              <apex:outputLink value="/one/one.app#/sObject/{!URLENCODE(val2.Id)}/view" target="_top">{!val2.Name}</apex:outputLink>
+            </apex:outputPanel>
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.Price.Label}</div>
+            </apex:facet>
+            <apex:outputField value="{!val2.Price}" />
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.Quantity.Label}</div>
+            </apex:facet>
+            <apex:outputText value="{0, number, ###,###}">
+              <apex:param value="{!val2.Quantity}"/>
+            </apex:outputText>
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Product2.Fields.Name.Label}</div>
+            </apex:facet>
+            <apex:outputField value="{!val2.Product2.Name}" />
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.Status.Label}</div>
+            </apex:facet>
+            <apex:outputField value="{!val2.Status}" />
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.PurchaseDate.Label}</div>
+            </apex:facet>
+            <apex:outputField value="{!val2.PurchaseDate}" />
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.InstallDate.Label}</div>
+            </apex:facet>
+            <apex:outputField value="{!val2.InstallDate}" />
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.UsageEndDate.Label}</div>
+            </apex:facet>
+            <apex:outputField value="{!val2.UsageEndDate}" />
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.SerialNumber.Label}</div>
+            </apex:facet>
+            <apex:outputField value="{!val2.SerialNumber}" />
+          </apex:column>
+          <apex:column >
+            <apex:facet name="header">
+              <div class="slds-text-title_caps">{!$ObjectType.Asset.Fields.Purchase_Opportunity__c.Label}</div>
+            </apex:facet>
+            <apex:outputField value="{!val2.Purchase_Opportunity__r.Name}" />
+          </apex:column>
+        </apex:dataTable>
+        <!--  CONVERTED ASSETS TABLE ENDS HERE -->
+        <!-- Toast that appears when we have a successful conversion of products to assets -->
+        <div id="toast-background-overlay">
+          <div id="converted-toast">
+            <div class="slds-notify_container slds-is-relative">
+              <div class="slds-notify slds-notify_toast slds-theme_success" role="alert">
+                <span class="slds-assistive-text">success</span>
+                <span class="slds-icon_container slds-icon-utility-success slds-m-right_small slds-no-flex slds-align-top" title="Description of icon when needed">
+                  <svg class="slds-icon slds-icon_small" aria-hidden="true">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="{!URLFOR($Asset.SLDS, '/assets/icons/utility-sprite/svg/symbols.svg#success')}"></use>
+                  </svg>
+                </span>
+                <div class="slds-notify__content">
+                  <h2 class="slds-text-heading_small ">Asset(s) successfully converted. Redirecting back to Opportunity...</h2>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Spinner that appears when we click "View Multiple/Single quantity items" or "Convert"-->
+    <apex:actionStatus id="spinnerStatus">
+      <apex:facet name="start">
+        <div class="slds-spinner_container">
+          <div class="slds-spinner--brand slds-spinner slds-spinner--medium" aria-hidden="false" role="alert">
+            <div class="slds-spinner__dot-a"></div>
+            <div class="slds-spinner__dot-b"></div>
+          </div>
+        </div>
+      </apex:facet>
+    </apex:actionStatus>
+  </apex:form>
+</apex:page>
